@@ -6,11 +6,11 @@ author: selvasingh
 
 #Getting Started with Network - Manage Network Interface - in .Net #
 
-      Azure Network sample for managing network interfaces -
-       - Create a virtual machine with multiple network interfaces
-       - Configure a network interface
-       - List network interfaces
-       - Delete a network interface.
+          Azure Network sample for managing network interfaces -
+           - Create a virtual machine with multiple network interfaces
+           - Configure a network interface
+           - List network interfaces
+           - Delete a network interface.
 
 
 ## Running this Sample ##
