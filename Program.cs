@@ -4,8 +4,8 @@
 using Microsoft.Azure.Management.Compute.Fluent;
 using Microsoft.Azure.Management.Compute.Fluent.Models;
 using Microsoft.Azure.Management.Fluent;
-using Microsoft.Azure.Management.Resource.Fluent;
-using Microsoft.Azure.Management.Resource.Fluent.Core;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Azure.Management.Samples.Common;
 using System;
 
@@ -29,8 +29,8 @@ namespace ManageNetworkInterface
             string networkInterfaceName1 = SdkContext.RandomResourceName("nic1", 24);
             string networkInterfaceName2 = SdkContext.RandomResourceName("nic2", 24);
             string networkInterfaceName3 = SdkContext.RandomResourceName("nic3", 24);
-            string publicIpAddressLeafDNS1 = SdkContext.RandomResourceName("pip1", 24);
-            string publicIpAddressLeafDNS2 = SdkContext.RandomResourceName("pip2", 24);
+            string publicIPAddressLeafDNS1 = SdkContext.RandomResourceName("pip1", 24);
+            string publicIPAddressLeafDNS2 = SdkContext.RandomResourceName("pip2", 24);
             // TODO adjust the length of vm name from 8 to 24
             string vmName = SdkContext.RandomResourceName("vm", 8);
             string rgName = SdkContext.RandomResourceName("rgNEMI", 24);
@@ -71,9 +71,9 @@ namespace ManageNetworkInterface
                         .WithExistingResourceGroup(rgName)
                         .WithExistingPrimaryNetwork(network)
                         .WithSubnet("Front-end")
-                        .WithPrimaryPrivateIpAddressDynamic()
-                        .WithNewPrimaryPublicIpAddress(publicIpAddressLeafDNS1)
-                        .WithIpForwarding()
+                        .WithPrimaryPrivateIPAddressDynamic()
+                        .WithNewPrimaryPublicIPAddress(publicIPAddressLeafDNS1)
+                        .WithIPForwarding()
                         .Create();
 
                 Utilities.Log("Created network interface 1");
@@ -85,7 +85,7 @@ namespace ManageNetworkInterface
                         .WithExistingResourceGroup(rgName)
                         .WithExistingPrimaryNetwork(network)
                         .WithSubnet("Mid-tier")
-                        .WithPrimaryPrivateIpAddressDynamic()
+                        .WithPrimaryPrivateIPAddressDynamic()
                         .Create();
 
                 Utilities.Log("Created network interface 2");
@@ -98,7 +98,7 @@ namespace ManageNetworkInterface
                         .WithExistingResourceGroup(rgName)
                         .WithExistingPrimaryNetwork(network)
                         .WithSubnet("Back-end")
-                        .WithPrimaryPrivateIpAddressDynamic()
+                        .WithPrimaryPrivateIPAddressDynamic()
                         .Create();
 
                 Utilities.Log("Created network interface 3");
@@ -133,7 +133,7 @@ namespace ManageNetworkInterface
                 // Configure a network interface
                 Utilities.Log("Updating the first network interface");
                 networkInterface1.Update()
-                        .WithNewPrimaryPublicIpAddress(publicIpAddressLeafDNS2)
+                        .WithNewPrimaryPublicIPAddress(publicIPAddressLeafDNS2)
                         .Apply();
 
                 Utilities.Log("Updated the first network interface");
@@ -144,7 +144,7 @@ namespace ManageNetworkInterface
                 // List network interfaces
 
                 Utilities.Log("Walking through network inter4faces in resource group: " + rgName);
-                var networkInterfaces = azure.NetworkInterfaces.ListByGroup(rgName);
+                var networkInterfaces = azure.NetworkInterfaces.ListByResourceGroup(rgName);
                 foreach (var networkInterface in networkInterfaces)
                 {
                     Utilities.PrintNetworkInterface(networkInterface);
@@ -162,7 +162,7 @@ namespace ManageNetworkInterface
 
                 Utilities.Log("============================================================");
                 Utilities.Log("Remaining network interfaces are ...");
-                networkInterfaces = azure.NetworkInterfaces.ListByGroup(rgName);
+                networkInterfaces = azure.NetworkInterfaces.ListByResourceGroup(rgName);
                 foreach (var networkInterface in networkInterfaces)
                 {
                     Utilities.PrintNetworkInterface(networkInterface);
@@ -196,7 +196,7 @@ namespace ManageNetworkInterface
                 var credentials = SdkContext.AzureCredentialsFactory.FromFile(Environment.GetEnvironmentVariable("AZURE_AUTH_LOCATION"));
 
                 var azure = Azure.Configure()
-                    .WithLogLevel(HttpLoggingDelegatingHandler.Level.BASIC)
+                    .WithLogLevel(HttpLoggingDelegatingHandler.Level.Basic)
                     .Authenticate(credentials)
                     .WithDefaultSubscription();
 
