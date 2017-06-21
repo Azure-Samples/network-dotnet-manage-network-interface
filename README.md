@@ -4,7 +4,7 @@ platforms: .Net
 author: selvasingh
 ---
 
-#Getting Started with Network - Manage Network Interface - in .Net #
+# Getting Started with Network - Manage Network Interface - in .Net #
 
           Azure Network sample for managing network interfaces -
            - Create a virtual machine with multiple network interfaces
