@@ -1,0 +1,2 @@
+C:\Sources\dotnet-samples\network-dotnet-manage-network-interface\bin\Debug\netstandard1.6\ManageNetworkInterface.deps.json
+C:\Sources\dotnet-samples\network-dotnet-manage-network-interface\obj\Debug\netstandard1.6\ManageNetworkInterface.csproj.CoreCompileInputs.cache

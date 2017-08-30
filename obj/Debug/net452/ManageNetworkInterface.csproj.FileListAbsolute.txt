@@ -1,0 +1,4 @@
+C:\Sources\dotnet-samples\network-dotnet-manage-network-interface\bin\Debug\net452\ManageNetworkInterface.runtimeconfig.json
+C:\Sources\dotnet-samples\network-dotnet-manage-network-interface\bin\Debug\net452\ManageNetworkInterface.runtimeconfig.dev.json
+C:\Sources\dotnet-samples\network-dotnet-manage-network-interface\obj\Debug\net452\ManageNetworkInterface.csproj.ManageNetworkInterface.exe.config
+C:\Sources\dotnet-samples\network-dotnet-manage-network-interface\obj\Debug\net452\ManageNetworkInterface.csproj.CoreCompileInputs.cache
