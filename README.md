@@ -1,10 +1,10 @@
 ---
-services: Network
-platforms: .Net
+services: virtual-network
+platforms: dotnet
 author: selvasingh
 ---
 
-# Getting Started with Network - Manage Network Interface - in .Net #
+# Getting started on managing network interface in C# #
 
           Azure Network sample for managing network interfaces -
            - Create a virtual machine with multiple network interfaces
@@ -17,7 +17,7 @@ author: selvasingh
 
 To run this sample:
 
-Set the environment variable `AZURE_AUTH_LOCATION` with the full path for an auth file. See [how to create an auth file](https://github.com/Azure/azure-sdk-for-net/blob/Fluent/AUTH.md).
+Set the environment variable `AZURE_AUTH_LOCATION` with the full path for an auth file. See [how to create an auth file](https://github.com/Azure/azure-libraries-for-java/blob/master/AUTH.md).
 
     git clone https://github.com/Azure-Samples/network-dotnet-manage-network-interface.git
 
