@@ -1,7 +1,7 @@
 ---
 services: virtual-network
 platforms: dotnet
-author: selvasingh
+author: yaohaizh
 ---
 
 # Getting started on managing network interface in C# #
@@ -17,7 +17,7 @@ author: selvasingh
 
 To run this sample:
 
-Set the environment variable `AZURE_AUTH_LOCATION` with the full path for an auth file. See [how to create an auth file](https://github.com/Azure/azure-libraries-for-java/blob/master/AUTH.md).
+Set the environment variable `AZURE_AUTH_LOCATION` with the full path for an auth file. See [how to create an auth file](https://github.com/Azure/azure-libraries-for-net/blob/master/AUTH.md).
 
     git clone https://github.com/Azure-Samples/network-dotnet-manage-network-interface.git
 
