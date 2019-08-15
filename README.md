@@ -4,18 +4,18 @@ languages:
 - csharp
 products:
 - azure
-services: virtual-network
-platforms: dotnet
-author: yaohaizh
+extensions:
+- services: virtual-network
+- platforms: dotnet
 ---
 
 # Getting started on managing network interface in C# #
 
-          Azure Network sample for managing network interfaces -
-           - Create a virtual machine with multiple network interfaces
-           - Configure a network interface
-           - List network interfaces
-           - Delete a network interface.
+ Azure Network sample for managing network interfaces -
+  - Create a virtual machine with multiple network interfaces
+  - Configure a network interface
+  - List network interfaces
+  - Delete a network interface.
 
 
 ## Running this Sample ##
