@@ -10,6 +10,8 @@ using Azure.ResourceManager.Resources;
 using Azure.ResourceManager;
 using Azure.ResourceManager.Network;
 using Azure.ResourceManager.Network.Models;
+using Azure.ResourceManager.Compute;
+using Azure.ResourceManager.Compute.Models;
 
 namespace ManageNetworkInterface
 {
@@ -33,7 +35,9 @@ namespace ManageNetworkInterface
             string nicName3 = Utilities.CreateRandomName("nic3-");
             string publicIPAddressLeafDNS1 = Utilities.CreateRandomName("pip1-");
             string publicIPAddressLeafDNS2 = Utilities.CreateRandomName("pip2-");
+            string vmName = Utilities.CreateRandomName("vm");
 
+            try
             {
                 // Get default subscription
                 SubscriptionResource subscription = await client.GetDefaultSubscriptionAsync();
@@ -67,8 +71,11 @@ namespace ManageNetworkInterface
                 VirtualNetworkResource vnet = vnetLro.Value;
                 Utilities.Log($"Created a virtual network: {vnet.Data.Name}");
 
-
+                Utilities.Log("Created two public ip...");
                 PublicIPAddressResource pip1 = await Utilities.CreatePublicIP(resourceGroup, publicIPAddressLeafDNS1);
+                PublicIPAddressResource pip2 = await Utilities.CreatePublicIP(resourceGroup, publicIPAddressLeafDNS2);
+                Utilities.Log($"Created public ip: {pip1.Data.Name}");
+                Utilities.Log($"Created public ip: {pip2.Data.Name}");
 
                 Utilities.Log("Creating multiple network interfaces...");
                 Utilities.Log("Creating network interface 1...");
@@ -97,6 +104,7 @@ namespace ManageNetworkInterface
                 var networkInterfaceLro1 = await resourceGroup.GetNetworkInterfaces().CreateOrUpdateAsync(WaitUntil.Completed, nicName1, nicInput1);
                 NetworkInterfaceResource nic1 = networkInterfaceLro1.Value;
                 Utilities.Log($"Created network interface 1: {nic1.Data.Name}");
+                Utilities.Log($"{nic1.Data.Name} associated public ip: {nic1.Data.IPConfigurations.First().PublicIPAddress.Id.Name}");
 
                 Utilities.Log("Creating network interface 2");
                 var nicInput2 = new NetworkInterfaceData()
@@ -145,65 +153,66 @@ namespace ManageNetworkInterface
 
                 Utilities.Log("Creating a Windows VM");
 
-                var t1 = DateTime.UtcNow;
-
-                var vm = azure.VirtualMachines.Define(vmName)
-                        .WithRegion(Region.USEast)
-                        .WithExistingResourceGroup(rgName)
-                        .WithExistingPrimaryNetworkInterface(networkInterface1)
-                        .WithPopularWindowsImage(KnownWindowsVirtualMachineImage.WindowsServer2012R2Datacenter)
-                        .WithAdminUsername(UserName)
-                        .WithAdminPassword(Password)
-                        .WithSize(VirtualMachineSizeTypes.Parse("Standard_D2a_v4"))
-                        .WithExistingSecondaryNetworkInterface(networkInterface2)
-                        .WithExistingSecondaryNetworkInterface(networkInterface3)
-                        .Create();
-
-                var t2 = DateTime.UtcNow;
-                Utilities.Log("Created VM: (took "
-                                + (t2 - t1).TotalSeconds + " seconds) " + vm.Id);
-                // Print virtual machine details
-                Utilities.PrintVirtualMachine(vm);
+                VirtualMachineData vmInput = Utilities.GetDefaultVMInputData(resourceGroup, vmName);
+                vmInput.NetworkProfile.NetworkInterfaces.Add(
+                    new VirtualMachineNetworkInterfaceReference()
+                    {
+                        Id = nic1.Id,
+                        Primary = true
+                    });
+                vmInput.NetworkProfile.NetworkInterfaces.Add(
+                    new VirtualMachineNetworkInterfaceReference()
+                    {
+                        Id = nic2.Id,
+                        Primary = false
+                    });
+                vmInput.NetworkProfile.NetworkInterfaces.Add(
+                    new VirtualMachineNetworkInterfaceReference()
+                    {
+                        Id = nic3.Id,
+                        Primary = false
+                    });
+                var vmLro = await resourceGroup.GetVirtualMachines().CreateOrUpdateAsync(WaitUntil.Completed, vmName, vmInput);
+                VirtualMachineResource vm = vmLro.Value;
+                Utilities.Log("Created VM: " + vm.Data.Name);
 
                 // ===========================================================
                 // Configure a network interface
                 Utilities.Log("Updating the first network interface");
-                networkInterface1.Update()
-                        .WithNewPrimaryPublicIPAddress(publicIPAddressLeafDNS2)
-                        .Apply();
-
+                var updateNic1Input = nic1.Data;
+                updateNic1Input.IPConfigurations.First().PublicIPAddress.Id = pip2.Id;
+                networkInterfaceLro1 = await resourceGroup.GetNetworkInterfaces().CreateOrUpdateAsync(WaitUntil.Completed, nicName1, updateNic1Input);
+                nic1 = networkInterfaceLro1.Value;
+                Utilities.Log($"{nic1.Data.Name} associated public ip: {nic1.Data.IPConfigurations.First().PublicIPAddress.Id.Name}");
                 Utilities.Log("Updated the first network interface");
-                Utilities.PrintNetworkInterface(networkInterface1);
-                Utilities.Log();
 
                 //============================================================
                 // List network interfaces
 
                 Utilities.Log("Walking through network inter4faces in resource group: " + rgName);
-                var networkInterfaces = azure.NetworkInterfaces.ListByResourceGroup(rgName);
-                foreach (var networkInterface in networkInterfaces)
+                await foreach (var networkInterface in resourceGroup.GetNetworkInterfaces().GetAllAsync())
                 {
-                    Utilities.PrintNetworkInterface(networkInterface);
+                    Utilities.Log(networkInterface.Data.Name);
                 }
 
                 //============================================================
                 // Delete a network interface
 
-                Utilities.Log("Deleting a network interface: " + networkInterface2.Id);
+                Utilities.Log("Deleting a network interface: " + nic2.Data.Name);
                 Utilities.Log("First, deleting the vm");
-                azure.VirtualMachines.DeleteById(vm.Id);
+                await vm.DeleteAsync(WaitUntil.Completed);
                 Utilities.Log("Second, deleting the network interface");
-                azure.NetworkInterfaces.DeleteById(networkInterface2.Id);
+                await nic2.DeleteAsync(WaitUntil.Completed);
                 Utilities.Log("Deleted network interface");
 
                 Utilities.Log("============================================================");
                 Utilities.Log("Remaining network interfaces are ...");
-                networkInterfaces = azure.NetworkInterfaces.ListByResourceGroup(rgName);
-                foreach (var networkInterface in networkInterfaces)
+                await foreach (var networkInterface in resourceGroup.GetNetworkInterfaces().GetAllAsync())
                 {
-                    Utilities.PrintNetworkInterface(networkInterface);
+                    Utilities.Log(networkInterface.Data.Name);
                 }
             }
+            finally
             {
                 try
                 {
@@ -227,20 +236,18 @@ namespace ManageNetworkInterface
 
         public static async Task Main(string[] args)
         {
-            var clientId = Environment.GetEnvironmentVariable("CLIENT_ID");
-            var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
-            var tenantId = Environment.GetEnvironmentVariable("TENANT_ID");
-            var subscription = Environment.GetEnvironmentVariable("SUBSCRIPTION_ID");
-            ClientSecretCredential credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
-            ArmClient client = new ArmClient(credential, subscription);
-
-            await RunSample(client);
-
             try
             {
                 //=================================================================
                 // Authenticate
+                var clientId = Environment.GetEnvironmentVariable("CLIENT_ID");
+                var clientSecret = Environment.GetEnvironmentVariable("CLIENT_SECRET");
+                var tenantId = Environment.GetEnvironmentVariable("TENANT_ID");
+                var subscription = Environment.GetEnvironmentVariable("SUBSCRIPTION_ID");
+                ClientSecretCredential credential = new ClientSecretCredential(tenantId, clientId, clientSecret);
+                ArmClient client = new ArmClient(credential, subscription);
 
+                await RunSample(client);
             }
             catch (Exception ex)
             {

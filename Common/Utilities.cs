@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using Azure.ResourceManager.Compute;
 using Azure.ResourceManager.Compute.Models;
+using System.Xml.Linq;
 
 namespace Azure.ResourceManager.Samples.Common
 {
@@ -73,29 +74,43 @@ namespace Azure.ResourceManager.Samples.Common
             return publicIPLro.Value;
         }
 
+        public static VirtualMachineData GetDefaultVMInputData(ResourceGroupResource resourceGroup,string vmName) => 
+            new VirtualMachineData(resourceGroup.Data.Location)
+            {
+                HardwareProfile = new VirtualMachineHardwareProfile(){ VmSize = VirtualMachineSizeType.StandardB4Ms },
+                StorageProfile = new VirtualMachineStorageProfile()
+                {
+                    ImageReference = new ImageReference()
+                    {
+                        Publisher = "MicrosoftWindowsDesktop",
+                        Offer = "Windows-10",
+                        Sku = "win10-21h2-ent",
+                        Version = "latest",
+                    },
+                    OSDisk = new VirtualMachineOSDisk(DiskCreateOptionType.FromImage)
+                    {
+                        OSType = SupportedOperatingSystemType.Windows,
+                        Name = CreateRandomName("myVMOSdisk"),
+                        Caching = CachingType.ReadOnly,
+                        ManagedDisk = new VirtualMachineManagedDisk()
+                        {
+                            StorageAccountType = StorageAccountType.StandardLrs,
+                        },
+                    },
+                },
+                OSProfile = new VirtualMachineOSProfile()
+                {
+                    AdminUsername = CreateUsername(),
+                    AdminPassword = CreatePassword(),
+                    ComputerName = vmName,
+                },
+                NetworkProfile = new VirtualMachineNetworkProfile() { }
+            };
+
+
         public static async Task<VirtualMachineResource> CreateVirtualMachine(ResourceGroupResource resourceGroup, ResourceIdentifier subnetId, string vmName = null)
         {
             vmName = vmName is null ? Utilities.CreateRandomName("vm") : vmName;
-            string nicName = Utilities.CreateRandomName("nic");
-
-            var nicInput = new NetworkInterfaceData()
-            {
-                Location = resourceGroup.Data.Location,
-                IPConfigurations =
-                {
-                    new NetworkInterfaceIPConfigurationData()
-                    {
-                        Name = "default-config",
-                        PrivateIPAllocationMethod = NetworkIPAllocationMethod.Dynamic,
-                        Subnet = new SubnetData()
-                        {
-                            Id = subnetId
-                        }
-                    }
-                }
-            };
-            var networkInterfaceLro = await resourceGroup.GetNetworkInterfaces().CreateOrUpdateAsync(WaitUntil.Completed, nicName, nicInput);
-            var nicId = networkInterfaceLro.Value.Data.Id;
 
             VirtualMachineCollection vmCollection = resourceGroup.GetVirtualMachines();
             VirtualMachineData vmInput = new VirtualMachineData(resourceGroup.Data.Location)
@@ -132,14 +147,14 @@ namespace Azure.ResourceManager.Samples.Common
                 },
                 NetworkProfile = new VirtualMachineNetworkProfile()
                 {
-                    NetworkInterfaces =
-                    {
-                        new VirtualMachineNetworkInterfaceReference()
-                        {
-                            Id = nicId,
-                            Primary = true,
-                        }
-                    }
+                    //NetworkInterfaces =
+                    //{
+                    //    new VirtualMachineNetworkInterfaceReference()
+                    //    {
+                    //        Id = nicId,
+                    //        Primary = true,
+                    //    }
+                    //}
                 },
             };
             var vmLro = await vmCollection.CreateOrUpdateAsync(WaitUntil.Completed, vmName, vmInput);
